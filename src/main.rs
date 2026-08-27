@@ -1,48 +1,48 @@
 use std::path::PathBuf;
 
-mod dataloader; // __init__ 
-use dataloader::{DataLoader, Dataset, Sample}; // import
+mod data; // __init__ 
+use data::{DataLoader, Dataset, Sample}; // import
 
-mod layer;
-use layer::LinearLayer;
+mod nn;
+use nn::{Layer, LinearLayer, ReLU};
 
+const TRAIN_ROOT: &str = "data/mnist_png/train";
+const TEST_ROOT: &str = "data/mnist_png/test";
 const BS: usize = 512;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let train_paths: Vec<PathBuf> = dataloader::collect_paths("data/mnist_png/train")?;
-    let test_paths: Vec<PathBuf> = dataloader::collect_paths("data/mnist_png/test")?;
-    println!(
-        "found {} train samples and {} test samples",
-        train_paths.len(),
-        test_paths.len()
-    );
-    let train_dataset: Dataset = Dataset::new(train_paths);
-    let test_dataset: Dataset = Dataset::new(test_paths);
+    let mut train_dataloader = init_dataloader(TRAIN_ROOT, BS, true)?;
+    let mut test_dataloader = init_dataloader(TEST_ROOT, BS, false)?;
 
-    let mut train_dataloader: DataLoader = DataLoader::new(train_dataset, BS, true);
-    let mut test_dataloader: DataLoader = DataLoader::new(test_dataset, BS, false);
-
-    let total_train_batches: usize = train_dataloader.num_batches();
-    let total_test_batches: usize = test_dataloader.num_batches();
-
-    for (idx, batch) in (&mut train_dataloader).enumerate() {
-        println!("TRAIN: Batch {idx} of {total_train_batches}, {} samples", batch.len());
-    }
-
-    train_dataloader.reset();
-
-    for (idx, batch) in (&mut test_dataloader).enumerate() {
-        println!("TEST: Batch {idx} of {total_test_batches}, {} samples", batch.len());
-    }
-
-    test_dataloader.reset();
+    run_one_epoch(&mut train_dataloader);
+    run_one_epoch(&mut test_dataloader);
 
     let batch: Vec<Sample> = train_dataloader.next().unwrap();
-    let sample: &Sample = &batch[0];
-    let layer: LinearLayer = LinearLayer::new(24 * 24, 10);
-    let output: Vec<f32> = layer.forward(&sample.image);
+    let labels: Vec<u8> = batch.iter().map(|sample| sample.label.clone()).collect();
+    let images: Vec<Vec<f32>> = batch.iter().map(|sample| sample.image.clone()).collect();
+    
+    let mut layer: LinearLayer = LinearLayer::new(24 * 24, 10);
+    let mut relu: ReLU = ReLU::new();
+    
+    let mut output: Vec<Vec<f32>> = layer.forward(&images);
+    output = relu.forward(&output);
 
     println!("выход слоя: {:?}", output);
-    println!("истинная метка: {}", sample.label);
+    println!("истинные метки: {:?}", labels);
 
     Ok(())
+}
+
+fn run_one_epoch(loader: &mut DataLoader) {
+    let total_train_batches: usize = loader.num_batches();
+    for (idx, batch) in loader.enumerate() {
+        println!("Batch {idx} of {total_train_batches}, {} samples", batch.len());
+    }
+    loader.reset();
+}
+
+fn init_dataloader(root: &str, bs: usize, shuffle: bool) -> Result<DataLoader, Box<dyn std::error::Error>> {
+    let paths: Vec<PathBuf> = data::utils::collect_paths(root)?;
+    let dataset: Dataset = Dataset::new(paths);
+    Ok(DataLoader::new(dataset, bs, shuffle))
 }
