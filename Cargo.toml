@@ -1,0 +1,8 @@
+[package]
+name = "rust_nn"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+image = "0.25.10"
+rand = "0.10.2"
