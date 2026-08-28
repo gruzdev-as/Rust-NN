@@ -34,4 +34,7 @@ impl Layer for ReLU {
 
         grad_input
     }
+    fn update(&mut self, _lr: f32) {
+        // параметров нет, верх запян
+    }
 }

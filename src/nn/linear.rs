@@ -16,9 +16,10 @@ pub struct LinearLayer {
 impl LinearLayer {
     pub fn new(num_features_in: usize, num_features_out: usize) -> Self {
         let mut rng = rand::rng();
+        let a: f32 = (6.0 / num_features_in as f32).sqrt(); // Имитируем оч плохо Kaiming uniform TODO: fix.
 
-        let w = utils::make_matrix(num_features_out, num_features_in, || rng.random_range(-1.0..1.0));
-        let grad_w = utils::make_matrix(num_features_out, num_features_in, || 0.0);
+        let w: Vec<Vec<f32>> = utils::make_matrix(num_features_out, num_features_in, || rng.random_range(-a..a));
+        let grad_w: Vec<Vec<f32>> = utils::make_matrix(num_features_out, num_features_in, || 0.0);
 
         let b: Vec<f32> = vec![0.0; num_features_out];
         let grad_b: Vec<f32> = vec![0.0; num_features_out];
@@ -85,5 +86,14 @@ impl Layer for LinearLayer {
             }
         }
         grad_input
+    }
+
+    fn update(&mut self, lr: f32) {
+        for i in 0..self.num_features_out {
+            for j in 0..self.num_features_in {
+                self.w[i][j] -= lr * self.grad_w[i][j];
+            }
+            self.b[i] -= lr * self.grad_b[i];
+        }
     }
 }

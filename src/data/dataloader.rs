@@ -60,7 +60,7 @@ impl DataLoader {
 impl Iterator for DataLoader {
     type Item = Vec<Sample>;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.curr_index <= self.num_batches() {
+        if self.curr_index < self.num_batches() {
             let batch = self.get_batch(self.curr_index);
             self.curr_index += 1;
             Some(batch)

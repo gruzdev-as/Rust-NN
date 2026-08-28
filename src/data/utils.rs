@@ -1,7 +1,7 @@
+use super::structures::{FloatImageVector, IntImageVector, Sample};
 use image::ImageReader;
 use std::fs;
 use std::path::{Path, PathBuf};
-use super::structures::{IntImageVector, FloatImageVector, Sample};
 
 pub fn read_image(path: &Path) -> Result<IntImageVector, Box<dyn std::error::Error>> {
     let img = ImageReader::open(path)?.decode()?.to_luma8();
