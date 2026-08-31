@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 image = "0.25.10"
 rand = "0.10.2"
+clap = { version = "4", features = ["derive"] }

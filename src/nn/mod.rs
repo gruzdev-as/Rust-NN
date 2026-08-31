@@ -6,7 +6,6 @@ mod network;
 pub mod utils;
 
 pub use activation::ReLU;
-pub use layer::Layer;
 pub use linear::LinearLayer;
 pub use loss::{Loss, SoftmaxCrossEntropyLoss};
 pub use network::Network;

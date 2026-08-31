@@ -1,28 +1,25 @@
 use std::path::PathBuf;
 
-mod data; // __init__ 
-use data::{DataLoader, Dataset, Sample}; // import
+mod data;
+use clap::Parser;
+use data::{DataLoader, Dataset, Config};
 
 mod nn;
-use nn::{Layer, LinearLayer, Loss, Network, ReLU, SoftmaxCrossEntropyLoss};
+use nn::{LinearLayer, Loss, Network, ReLU, SoftmaxCrossEntropyLoss};
 
 mod metrics;
 
-const TRAIN_ROOT: &str = "data/mnist_png/train";
-const TEST_ROOT: &str = "data/mnist_png/test";
-const BS: usize = 64;
-const LR: f32 = 0.001;
-const NUM_EPOCHS: i32 = 10;
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let config: Config = Config::parse();
+    
     let mut net: Network = build_nn();
     let loss: SoftmaxCrossEntropyLoss = SoftmaxCrossEntropyLoss::default();
-    let mut train_dataloader: DataLoader = init_dataloader(TRAIN_ROOT, BS, true)?;
-    let mut test_dataloader: DataLoader = init_dataloader(TEST_ROOT, BS, false)?;
+    let mut train_dataloader: DataLoader = init_dataloader(&config.train_data_folder, config.batch_size, true)?;
+    let mut test_dataloader: DataLoader = init_dataloader(&config.test_data_folder, config.batch_size, false)?;
 
-    for epoch in 0..NUM_EPOCHS {
-        println!("=== EPOCH {} of {NUM_EPOCHS} ===", epoch + 1);
-        train_one_epoch(&mut net, &loss, &mut train_dataloader);
+    for epoch in 0..config.num_epochs {
+        println!("=== EPOCH {} of {} ===", epoch + 1, config.num_epochs);
+        train_one_epoch(&mut net, &loss, &mut train_dataloader, config.lr);
         validate_one_epoch(&mut net, &mut test_dataloader);
     }
     Ok(())
@@ -32,11 +29,13 @@ fn build_nn() -> Network {
     Network::new(vec![
         Box::new(LinearLayer::new(784, 128)),
         Box::new(ReLU::new()),
+        Box::new(LinearLayer::new(128, 128)),
+        Box::new(ReLU::new()),
         Box::new(LinearLayer::new(128, 10)),
     ])
 }
 
-fn train_one_epoch(net: &mut Network, loss: &impl Loss, loader: &mut DataLoader) {
+fn train_one_epoch(net: &mut Network, loss: &impl Loss, loader: &mut DataLoader, lr: f32) {
     let total_train_batches = loader.num_batches();
     let mut running_loss: f32 = 0.0;
     for (idx, batch) in loader.by_ref().enumerate() {
@@ -47,10 +46,10 @@ fn train_one_epoch(net: &mut Network, loss: &impl Loss, loader: &mut DataLoader)
         running_loss += loss.loss(&logits, &labels);
         let grad: Vec<Vec<f32>> = loss.grad(&logits, &labels);
         net.backward(&grad);
-        net.update(LR);
+        net.update(lr);
 
-        if idx % 50 == 0 {
-            println!("batch {idx}/{total_train_batches}  loss {:.4}", running_loss / 50.0);
+        if idx % 200 == 0 && idx != 0 {
+            println!("batch {idx}/{total_train_batches}  loss {:.4}", running_loss / 200.0);
             running_loss = 0.0
         }
     }
@@ -61,7 +60,7 @@ fn validate_one_epoch(net: &mut Network, loader: &mut DataLoader) {
     let mut predictions: Vec<usize> = Vec::new();
     let mut true_values: Vec<usize> = Vec::new();
 
-    for (idx, batch) in loader.by_ref().enumerate() {
+    for batch in loader.by_ref() {
         let labels: Vec<usize> = batch
             .iter()
             .map(|sample| sample.label.clone())
