@@ -1,17 +1,15 @@
+use clap::Parser;
 use std::path::PathBuf;
 
-mod data;
-use clap::Parser;
-use data::{DataLoader, Dataset, Config};
-
-mod nn;
-use nn::{LinearLayer, Loss, Network, ReLU, SoftmaxCrossEntropyLoss};
-
-mod metrics;
+use rust_nn::data::utils as data_utils;
+use rust_nn::data::{Config, DataLoader, Dataset};
+use rust_nn::raw::metrics;
+use rust_nn::raw::nn::utils as nn_utils;
+use rust_nn::raw::nn::{LinearLayer, Loss, Network, ReLU, SoftmaxCrossEntropyLoss};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config: Config = Config::parse();
-    
+
     let mut net: Network = build_nn();
     let loss: SoftmaxCrossEntropyLoss = SoftmaxCrossEntropyLoss::default();
     let mut train_dataloader: DataLoader = init_dataloader(&config.train_data_folder, config.batch_size, true)?;
@@ -71,7 +69,7 @@ fn validate_one_epoch(net: &mut Network, loader: &mut DataLoader) {
         let predicted: Vec<usize> = net
             .forward(&input)
             .iter()
-            .map(|row| nn::utils::argmax(row).unwrap())
+            .map(|row| nn_utils::argmax(row).unwrap())
             .collect();
 
         true_values.extend_from_slice(&labels);
@@ -83,7 +81,7 @@ fn validate_one_epoch(net: &mut Network, loader: &mut DataLoader) {
 }
 
 fn init_dataloader(root: &str, bs: usize, shuffle: bool) -> Result<DataLoader, Box<dyn std::error::Error>> {
-    let paths: Vec<PathBuf> = data::utils::collect_paths(root)?;
+    let paths: Vec<PathBuf> = data_utils::collect_paths(root)?;
     let dataset: Dataset = Dataset::new(paths);
     Ok(DataLoader::new(dataset, bs, shuffle))
 }

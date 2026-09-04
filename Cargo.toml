@@ -7,3 +7,5 @@ edition = "2024"
 image = "0.25.10"
 rand = "0.10.2"
 clap = { version = "4", features = ["derive"] }
+ndarray = "0.17.2"
+ndarray-rand = "0.16.0"
