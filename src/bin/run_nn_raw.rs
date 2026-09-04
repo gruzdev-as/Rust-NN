@@ -77,7 +77,9 @@ fn validate_one_epoch(net: &mut Network, loader: &mut DataLoader) {
     }
     loader.reset();
     let accuracy = metrics::classification::accuracy_score(&true_values, &predictions);
-    println!("Accuracy: {}", accuracy)
+    let (precision, recall, f_score) = metrics::classification::get_per_class_metrics_macro(&true_values, &predictions);
+    println!("Accuracy: {:.4}", accuracy);
+    println!("MACRO: precision: {precision:.4}, recall: {recall:.4}, f_score: {f_score:.4}");
 }
 
 fn init_dataloader(root: &str, bs: usize, shuffle: bool) -> Result<DataLoader, Box<dyn std::error::Error>> {
