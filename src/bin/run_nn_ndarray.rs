@@ -4,9 +4,9 @@ use std::path::PathBuf;
 
 use rust_nn::data::utils as data_utils;
 use rust_nn::data::{Config, DataLoader, Dataset};
-use rust_nn::nd::metrics;
-use rust_nn::nd::nn::utils as nn_utils;
-use rust_nn::nd::nn::{LinearLayer, Loss, Network, ReLU, SoftmaxCrossEntropyLoss};
+use rust_nn::metrics;
+use rust_nn::nd::utils as nn_utils;
+use rust_nn::nd::{LinearLayer, Loss, Network, ReLU, SoftmaxCrossEntropyLoss};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config: Config = Config::parse();
